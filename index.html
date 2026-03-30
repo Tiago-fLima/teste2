@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4caf50">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Itens</title>
+<style>
+body{
+  font-family:Arial;
+  padding:10px;
+  background:#f5f5f5;
+  overflow-x:hidden;
+}
+h2{
+text-align:center
+}
+.top{
+  display:flex;
+  gap:5px;
+  margin-bottom:10px;
+  flex-wrap: wrap;
+}
+.top button{
+  flex:0 0 auto;
+}
+.item{
+display:flex;
+justify-content:space-between;
+align-items:center;background:#fff;
+padding:10px;margin:5px 0;
+border-radius:10px;
+box-shadow:0 2px 5px rgba(0,0,0,.1)
+}
+.item-left{
+flex:1
+}
+.item-right{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:5px;
+  align-items:center;
+}
+.item{
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn{
+  from{
+    opacity:0;
+    transform:translateY(10px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+}
+
+/* aplica animação */
+.modalContent{
+  animation: modalFadeIn 0.25s ease;
+}
+
+/* classe de saída */
+.modal.saindo .modalContent{
+  animation: modalFadeOut 0.2s ease forwards;
+}
+
+.toggle{
+  width:50px;
+  height:25px;
+  border-radius:20px;
+  background:#ccc;
+  position:relative;
+  cursor:pointer;
+  transition: all 0.3s ease;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  font-size:12px;
+  color:#fff;
+  font-weight:bold;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.toggle:active{
+  transform: scale(0.9);
+}
+
+.toggle::after{
+  content:'';
+  width:22px;
+  height:22px;
+  background:#fff;
+  border-radius:50%;
+  position:absolute;
+  top:1.5px;
+  left:2px;
+  transition: all 0.3s ease;
+}
+
+.toggle.ativo{
+  background:#4caf50;
+}
+
+.toggle.ativo::after{
+  left:26px;
+}
+
+.toggle:not(.ativo){
+  color:transparent;
+}
+
+
+.dias{
+  position:absolute;
+  left:10px;
+}
+
+.btn{
+  padding:6px 8px;border:none;border-radius:8px;background:#2196f3;color:#fff;font-size:12px
+}
+input,select{
+  flex:1 1 60%;
+  min-width: 0;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ccc
+}
+button{
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#4caf50;
+  color:#fff;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+button:active{
+  transform: scale(0.95);
+  box-shadow: inset 0 4px 7px rgba(0,0,0,0.2);
+}
+.menuEditar button{
+  width:100%;
+  margin:5px 0;
+}
+.filtros{
+  display:flex;
+  gap:5px;
+  margin-bottom:10px
+}
+.filtros button{
+  flex:1;background:#ddd;
+  color:#000
+}
+.filtros button.ativo{
+  background:#4caf50;
+  color:#fff
+}
+
+.modal{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+  display:none;align-items:center;
+  justify-content:center
+}
+
+.modal2{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+  display:none;align-items:center;
+  justify-content:center
+}
+
+.modalContent{
+  background:#fff;
+  padding:15px;
+  border-radius:10px;
+  width:90%;
+  max-width: 400px;
+}
+textarea{
+  width:100%;
+  height:200px;
+  margin-top:10px
+}
+
+.modalNomeCustom input{
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  font-size:16px;
+  padding:12px;
+  margin:10px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+
+.ordenacao{
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+
+.acoesModal{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+.menuEditarCustom{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.grupoBotoes{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.menuEditarCustom button{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+}
+
+.btnExcluir{
+  background:#f44336;
+}
+
+.btnFechar{
+  background:#777;
+}
+
+.buscaBox{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+}
+
+.buscaBox input{
+  flex:1;
+  min-width:80px;
+}
+
+.buscaContainer{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:10px;
+}
+
+.linhaPreco{
+  display:flex;
+  gap:5px;
+}
+
+.linhaPreco input{
+  flex:1;
+}
+
+.acoesBusca{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+.acoesPrincipais{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.acoesPrincipais button{
+  flex:1;
+  max-width:150px;
+}
+
+.modalContent input,
+.modalContent select{
+  width:100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+  margin:8px 0;
+}
+
+button[onclick*="fechar"]{
+  background:#777 !important;
+}
+
+</style>
+</head>
+<body>
+
+<h2>Controle de Itens</h2>
+
+<!-- 🔍 BUSCA -->
+<div class="buscaContainer">
+  <input type="text" id="buscaNome" placeholder="🔍 Buscar produto"
+    onkeyup="if(event.key==='Enter') filtrarBusca()">
+
+  <div class="linhaPreco">
+    <input type="number" id="precoMin" placeholder="Min">
+    <input type="number" id="precoMax" placeholder="Max">
+  </div>
+
+  <div class="acoesBusca">
+    <button onclick="filtrarBusca()">Buscar</button>
+    <button onclick="limparBusca()">Limpar</button>
+  </div>
+</div>
+
+<!-- ⚙️ AÇÕES PRINCIPAIS -->
+<div class="acoesPrincipais">
+  <button onclick="abrirModalAdicionar()">➕ Adicionar</button>
+  <button onclick="abrirMenuImportar()">📂 Importar</button>
+  <button onclick="exportarLista()">💾 Exportar</button>
+</div>
+
+<!-- 🔽 ORDENAÇÃO + CATEGORIA -->
+<div class="top">
+  <select id="ordenacao" onchange="ordenarLista()">
+    <option value="preco">💰 Preço</option>
+    <option value="az">🔤 A → Z</option>
+    <option value="za">🔤 Z → A</option>
+  </select>
+
+  <select id="filtroCategoria" onchange="render()">
+    <option value="todas">Todas</option>
+    <option value="6x9">6x9</option>
+    <option value="6pol">6" e 5"</option>
+    <option value="sub">Subwoofer</option>
+    <option value="tweeter">Tweeter</option>
+  </select>
+</div>
+
+<!-- ✔ FILTRO -->
+<div class="filtros">
+  <button onclick="setFiltro('todos')" id="btnTodos" class="ativo">Todos</button>
+  <button onclick="setFiltro('nao')" id="btnNao">Não Marcados</button>
+  <button onclick="setFiltro('sim')" id="btnSim">Marcados</button>
+</div>
+
+<!-- 📋 LISTA -->
+<div id="lista"></div>
+
+<!-- ➕ MODAL ADICIONAR -->
+<div id="modalAdicionar" class="modal">
+  <div class="modalContent">
+    <h3>Novo Item</h3>
+
+    <input type="text" id="novoNome" placeholder="Nome do produto">
+    <input type="number" id="novoPreco" placeholder="Preço">
+
+    <button onclick="salvarNovoItem()">Salvar</button>
+    <button onclick="fecharModalAdicionar()">Cancelar</button>
+  </div>
+</div>
+
+<!-- 🎟️ MODAL CUPOM ML -->
+<div id="modalCupomML" class="modal">
+  <div class="modalContent">
+    <h3>Definir Cupom ML</h3>
+
+    <input type="text" id="inputCupomML" placeholder="Digite o cupom">
+
+    <div class="acoesModal">
+      <button onclick="salvarCupomML()">Salvar</button>
+      <button onclick="fecharModalCupomML()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔗 MODAL LINK SHOPEE -->
+<div id="modalLinkShopee" class="modal">
+  <div class="modalContent">
+    <h3>Definir Link Shopee</h3>
+
+    <input type="text" id="inputLinkShopee" placeholder="Cole o link da Shopee">
+
+    <div class="acoesModal">
+      <button onclick="salvarLinkShopee()">Salvar</button>
+      <button onclick="fecharModalLinkShopee()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- 📂 MODAL IMPORTAR -->
+<div id="modalImportar" class="modal">
+  <div class="modalContent">
+    <h3>Importar Lista</h3>
+
+    <input type="file" id="fileInput" accept=".txt">
+
+    <button onclick="importarLista()">Importar</button>
+    <button onclick="fecharMenuImportar()">Cancelar</button>
+    <button onclick="limparDados()" style="background:#f44336;">🗑️ Limpar Tudo</button>
+  </div>
+</div>
+
+<!-- 📄 MODAL TEXTO -->
+<div id="modal" class="modal">
+  <div class="modalContent">
+    <h3>Texto</h3>
+    <button onclick="buscarAtual()">🔎 Pesquisar</button>
+    <textarea id="textoML"></textarea>
+    <button onclick="copiarTexto()">Copiar</button>
+    <button onclick="enviarWhatsAppDireto()">📲 WhatsApp</button>
+    <button onclick="abrirModalCupomML()">🎟️ Cupom</button>
+    <button onclick="fecharModal()">Fechar</button>
+  </div>
+</div>
+
+<div id="modal2" class="modal">
+  <div class="modalContent">
+    <h3>Texto</h3>
+    <button onclick="buscarAtual()">🔎 Pesquisar</button>
+    <textarea id="textoShopee"></textarea>
+    <button onclick="copiarTexto()">Copiar</button>
+    <button onclick="enviarWhatsAppDireto()">📲 WhatsApp</button>
+    <button onclick="abrirModalLinkShopee()">🔗 Link</button>
+    <button onclick="fecharModal2()">Fechar</button>
+  </div>
+</div>
+
+<!-- ✏️ MENU EDITAR -->
+<div id="menuEditar" class="modal">
+  <div class="modalContent menuEditarCustom">
+    <h3>Editar item</h3>
+
+    <button onclick="editarNome()">✏️ Nome</button>
+    <button onclick="editarPrecoAtual()">💰 Preço</button>
+    <button class="btnExcluir" onclick="abrirModalExcluir()">🗑️ Excluir</button>
+
+    <button class="btnFechar" onclick="fecharMenuEditar()">Fechar</button>
+  </div>
+</div>
+
+<!-- ✏️ EDITAR NOME -->
+<div id="modalNome" class="modal">
+  <div class="modalContent modalNomeCustom">
+    <h3>Editar Nome</h3>
+
+    <input type="text" id="novoNomeInput">
+
+    <div class="acoesModal">
+      <button onclick="salvarNovoNome()">Salvar</button>
+      <button onclick="fecharModalNome()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- 💰 EDITAR PREÇO -->
+<div id="modalPreco" class="modal">
+  <div class="modalContent modalNomeCustom">
+    <h3>Editar Preço</h3>
+
+    <p id="precoAtualTexto"></p>
+    <input type="number" id="novoPrecoInput">
+
+    <div class="acoesModal">
+      <button onclick="salvarNovoPreco()">Salvar</button>
+      <button onclick="fecharModalPreco()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ❌ EXCLUIR -->
+<div id="modalExcluir" class="modal">
+  <div class="modalContent">
+    <h3>Excluir Item</h3>
+    <p id="nomeExcluirTexto"></p>
+
+    <button onclick="confirmarExclusao()">Sim, excluir</button>
+    <button onclick="fecharModalExcluir()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+var itens = JSON.parse(localStorage.getItem("itens")) || [];
+
+var filtro = 'todos';
+var tipoAtual = "";
+var nomeAtual = "";
+var indexAtual = null;
+
+var buscaAtiva = false;
+var buscaNome = "";
+var buscaMin = 0;
+var buscaMax = Infinity;
+
+var ordenacaoAtual = "preco";
+
+var cupomML = localStorage.getItem("cupomML") || "";
+var linkShopee = localStorage.getItem("linkShopee") || "";
+
+function abrirModalCupomML(){
+  fecharTodosModais();
+  document.getElementById("modalCupomML").style.display = "flex";
+  document.getElementById("inputCupomML").value = cupomML;
+}
+
+function fecharModalCupomML(){
+  trocarModal("modalCupomML", "modal");
+}
+
+function salvarCupomML(){
+  var valor = document.getElementById("inputCupomML").value.trim();
+
+  cupomML = valor;
+  localStorage.setItem("cupomML", cupomML);
+
+  trocarModal("modalCupomML", "modal");
+
+  setTimeout(()=>{
+    document.getElementById('textoML').value = gerarML(nomeAtual);
+  }, 210);
+}
+
+function abrirModalLinkShopee(){
+  fecharTodosModais();
+  document.getElementById("modalLinkShopee").style.display = "flex";
+  document.getElementById("inputLinkShopee").value = linkShopee;
+}
+
+function fecharModalLinkShopee(){
+  trocarModal("modalLinkShopee", "modal2");
+}
+
+function salvarLinkShopee(){
+  var valor = document.getElementById("inputLinkShopee").value.trim();
+
+  linkShopee = valor;
+  localStorage.setItem("linkShopee", linkShopee);
+
+  trocarmodal("modalLinkShopee", "modal2");
+
+  setTimeout(()=>{
+    document.getElementById('textoShopee').value = gerarShopee(nomeAtual);
+  }, 210);
+}
+
+function fecharComAnimacao(id){
+  var modal = document.getElementById(id);
+
+  modal.classList.add("saindo");
+
+  setTimeout(()=>{
+    modal.style.display = "none";
+    modal.classList.remove("saindo");
+  }, 200); // tempo da animação
+}
+
+function salvar(){
+  localStorage.setItem("itens", JSON.stringify(itens));
+}
+
+function trocarModal(atual, proximo){
+  var modalAtual = document.getElementById(atual);
+
+  modalAtual.classList.add("saindo");
+
+  setTimeout(()=>{
+    modalAtual.style.display = "none";
+    modalAtual.classList.remove("saindo");
+
+    var modalNovo = document.getElementById(proximo);
+    modalNovo.style.display = "flex";
+  }, 200);
+}
+
+function abrirModalAdicionar(){
+  document.getElementById("modalAdicionar").style.display = "flex";
+}
+
+function fecharModalAdicionar(){
+  document.getElementById("modalAdicionar").style.display = "none";
+}
+
+function fecharTodosModais(){
+  document.querySelectorAll(".modal").forEach(m=>{
+    m.style.display = "none";
+  });
+}
+
+
+function salvarNovoItem(){
+  var nome = document.getElementById("novoNome").value.trim();
+
+  var precoInput = document.getElementById("novoPreco").value || "0";
+
+  var preco = normalizarPreco(precoInput);
+
+  var preco = parseFloat(
+    precoInput
+      .replace(/\./g, "")
+      .replace(",", ".")
+  ) || 0;
+
+  if(!nome) return;
+
+  var categoria = detectarCategoria(nome);
+
+  itens.push({
+    nome: nome,
+    preco: preco,
+    marcado: false,
+    data: null,
+    categoria: categoria
+  });
+
+  // 🔥 limpa campos
+  document.getElementById("novoNome").value = "";
+  document.getElementById("novoPreco").value = "";
+
+  fecharModalAdicionar();
+  salvar();
+  render();
+}
+
+function abrirMenuImportar(){
+  document.getElementById("modalImportar").style.display = "flex";
+}
+
+function fecharMenuImportar(){
+  document.getElementById("modalImportar").style.display = "none";
+}
+
+function normalizarPreco(valor){
+  valor = valor.replace("R$", "").trim();
+
+  // se tiver vírgula → formato brasileiro (decimal)
+  if(valor.includes(",")){
+    return parseFloat(
+      valor.replace(/\./g, "").replace(",", ".")
+    ) || 0;
+  }
+
+  // se só tem ponto → pode ser milhar
+  return parseFloat(
+    valor.replace(/\./g, "")
+  ) || 0;
+}
+
+// ================= ORDENAÇÃO =================
+
+function ordenarLista(){
+  ordenacaoAtual = document.getElementById("ordenacao").value;
+  aplicarOrdenacao();
+  salvar();
+  render();
+}
+
+function aplicarOrdenacao(){
+  if(ordenacaoAtual === "preco"){
+    itens.sort((a,b)=>(a.preco||0)-(b.preco||0));
+  }
+
+  if(ordenacaoAtual === "az"){
+    itens.sort((a,b)=>a.nome.localeCompare(b.nome));
+  }
+
+  if(ordenacaoAtual === "za"){
+    itens.sort((a,b)=>b.nome.localeCompare(a.nome));
+  }
+}
+
+// ================= BUSCA =================
+
+function filtrarBusca(){
+  buscaNome = document.getElementById("buscaNome").value.toLowerCase();
+  buscaMin = parseFloat(document.getElementById("precoMin").value) || 0;
+  buscaMax = parseFloat(document.getElementById("precoMax").value) || Infinity;
+
+  buscaAtiva = true;
+  render();
+}
+
+function limparBusca(){
+  buscaAtiva = false;
+
+  document.getElementById("buscaNome").value="";
+  document.getElementById("precoMin").value="";
+  document.getElementById("precoMax").value="";
+
+  render();
+}
+
+function importarLista(){
+  var file = document.getElementById('fileInput').files[0];
+  if(!file) return;
+
+  var reader = new FileReader();
+
+  reader.onload = function(e){
+    var linhas = e.target.result.split('\n');
+
+    linhas.forEach(function(linha){
+      linha = linha.trim();
+      if(!linha) return;
+
+      var partes = linha.split('|');
+      if(partes.length < 4) return;
+
+      var marcado = partes[0] === '[v]';
+      var data = parseInt(partes[1]) || null;
+      var nome = partes[2];
+
+      var preco = 0;
+      if(partes[3]){
+        preco = normalizarPreco(partes[3]);
+      }
+
+      var categoria = detectarCategoria(nome);
+
+      // 🔥 VERIFICA SE JÁ EXISTE
+      var existente = itens.find(i => i.nome.toLowerCase() === nome.toLowerCase());
+
+      if(existente){
+        // 🔥 ATUALIZA se necessário
+
+        // mantém o mais recente marcado
+        if(marcado){
+          existente.marcado = true;
+          existente.data = data;
+        }
+
+        // atualiza preço se tiver valor
+        if(preco > 0){
+          existente.preco = preco;
+        }
+
+      } else {
+        // 🔥 ADICIONA novo
+        itens.push({
+          nome: nome,
+          preco: preco,
+          marcado: marcado,
+          data: data,
+          categoria: categoria
+        });
+      }
+    });
+
+    salvar();
+    render();
+    fecharMenuImportar();
+  };
+
+  reader.readAsText(file);
+}
+
+function limparDados(){
+  var confirmar = prompt("Digite APAGAR para confirmar");
+
+  if(confirmar !== "APAGAR") return;
+
+  localStorage.removeItem("itens");
+  itens = [];
+
+  salvar();
+  render();
+
+  fecharMenuImportar();
+}
+
+function detectarCategoria(nome){
+  nome = nome.toLowerCase();
+
+  if(nome.includes('6x9')) return '6x9';
+  if(nome.includes('sub')) return 'sub';
+  if(nome.includes('tweeter')) return 'tweeter';
+
+  return '6pol';
+}
+
+// ================= FILTROS =================
+
+function setFiltro(tipo){
+  filtro = tipo;
+
+  ['btnTodos','btnNao','btnSim'].forEach(id=>{
+    document.getElementById(id).classList.remove('ativo');
+  });
+
+  if(tipo==='todos') document.getElementById('btnTodos').classList.add('ativo');
+  if(tipo==='nao') document.getElementById('btnNao').classList.add('ativo');
+  if(tipo==='sim') document.getElementById('btnSim').classList.add('ativo');
+
+  render();
+}
+
+// ================= TOGGLE =================
+
+function toggleItem(index){
+  var item = itens[index];
+
+  item.marcado = !item.marcado;
+  item.data = item.marcado ? Date.now() : null;
+
+  salvar();
+  
+}
+
+// ================= UTIL =================
+
+function diasRestantes(item){
+  if(!item.data) return "";
+
+  var hoje = new Date();
+  hoje.setHours(0,0,0,0);
+
+  var dataItem = new Date(item.data);
+  dataItem.setHours(0,0,0,0);
+
+  var diffDias = Math.floor((hoje - dataItem) / (1000 * 60 * 60 * 24));
+  var restante = 3 - diffDias;
+
+  return restante > 0 ? restante : "";
+}
+
+function verificarExpiracao(){
+  var hoje = new Date();
+  hoje.setHours(0,0,0,0);
+
+  itens.forEach(item=>{
+    if(item.marcado && item.data){
+      var dataItem = new Date(item.data);
+      dataItem.setHours(0,0,0,0);
+
+      var diffDias = Math.floor((hoje - dataItem) / (1000 * 60 * 60 * 24));
+
+      if(diffDias >= 3){
+        item.marcado = false;
+        item.data = null;
+      }
+    }
+  });
+
+  salvar();
+}
+
+// ================= MODAL =================
+
+function abrirModal(texto,nome){
+  nomeAtual = nome;
+  document.getElementById('modal').style.display='flex';
+  document.getElementById('textoML').value=texto;
+}
+
+function abrirModal2(texto,nome){
+  nomeAtual = nome;
+  document.getElementById('modal2').style.display='flex';
+  document.getElementById('textoShopee').value=texto;
+}
+
+function fecharModal(){
+  fecharComAnimacao("modal");
+}
+
+function fecharModal2(){
+  fecharComAnimacao('modal2')
+}
+
+// ================= TEXTO =================
+
+function abrirModalExcluir(){
+  var item = itens[indexAtual];
+
+  document.getElementById("nomeExcluirTexto").innerText =
+    "Excluir: " + item.nome;
+
+  document.getElementById("modalExcluir").style.display = "flex";
+}
+
+function gerarShopee(nome){
+return `🔥 ${nome}
+
+❌ De R$ 
+✅ Por R$ Pix!
+(apenas R$ cada unidade)
+
+🛒 Primeiro adicione o produto no carrinho:
+
+👉🏻 Depois ative seu desconto resgatando o cupom de R$ OFF aqui: ${linkShopee || "https://s.shopee.com.br/7VByMsPiww"}
+
+#anúncio`;
+}
+
+function gerarML(nome){
+return `🔥 ${nome}
+
+❌ De R$
+✅ Por R$
+(Apenas R$ cada unidade)
+
+👉🏻 Use o cupom ${cupomML || ""}
+
+🛒 
+
+#anúncio`;
+}
+
+// ================= WHATS =================
+
+function enviarWhatsApp(texto){
+  var url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(texto);
+  window.open(url, "_blank");
+}
+
+function enviarWhatsAppDireto(){
+  var textarea = document.getElementById('modal').style.display === 'flex'
+    ? document.getElementById('textoML')
+    : document.getElementById('textoShopee');
+
+  var texto = textarea.value;
+
+  copiarTexto();
+  enviarWhatsApp(texto);
+}
+
+// ================= COPY =================
+
+function copiarTexto(){
+  var textarea = document.getElementById('modal').style.display === 'flex'
+    ? document.getElementById('textoML')
+    : document.getElementById('textoShopee');
+
+  var texto = textarea.value;
+
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(texto)
+      .catch(()=>fallbackCopy(textarea));
+  } else {
+    fallbackCopy(textarea);
+  }
+}
+
+// método alternativo
+function fallbackCopy(textarea){
+  textarea.select();
+  textarea.setSelectionRange(0, 99999); // mobile
+
+  try{
+    document.execCommand('copy');
+  }catch(err){
+    alert("Erro ao copiar");
+  }
+}
+
+// ================= EDITAR =================
+
+function abrirMenuEditar(index){
+  indexAtual = index;
+  document.getElementById('menuEditar').style.display='flex';
+}
+
+function fecharMenuEditar(){
+  document.getElementById('menuEditar').style.display='none';
+}
+
+function editarNome(){
+  var item = itens[indexAtual];
+  var input = document.getElementById("novoNomeInput");
+
+  input.value = item.nome;
+  document.getElementById("modalNome").style.display = "flex";
+
+  fecharMenuEditar();
+}
+
+function salvarNovoNome(){
+  var novo = document.getElementById("novoNomeInput").value;
+  if(!novo) return;
+
+  itens[indexAtual].nome = novo;
+
+  salvar();
+  render();
+  fecharModalNome();
+}
+
+function fecharModalNome(){
+  trocarModal("modalNome", "menuEditar");
+}
+
+function editarPrecoAtual(){
+  var item = itens[indexAtual];
+
+  document.getElementById("precoAtualTexto").innerText = item.nome;
+  document.getElementById("novoPrecoInput").value = item.preco || "";
+
+  document.getElementById("modalPreco").style.display = "flex";
+
+  fecharMenuEditar();
+}
+
+function salvarNovoPreco(){
+  var novo = document.getElementById("novoPrecoInput").value;
+  if(!novo) return;
+
+  itens[indexAtual].preco = parseFloat(novo);
+
+  salvar();
+  render();
+  fecharModalPreco();
+}
+
+function fecharModalPreco(){
+  trocarModal("modalPreco", "menuEditar");
+}
+
+function excluirAtual(){
+  itens.splice(indexAtual,1);
+  salvar();
+  render();
+  fecharModalExcluir();
+}
+
+function confirmarExclusao(){
+  if(indexAtual === null) return;
+
+  itens.splice(indexAtual, 1);
+
+  salvar();
+  render();
+  fecharModalExcluir();
+  fecharMenuEditar();
+}
+
+function fecharModalExcluir(){
+  trocarModal("modalExcluir", "menuEditar");
+}
+
+function adicionarItem(){
+  var nome = document.getElementById("novoItem").value.trim();
+  var categoria = document.getElementById("categoria").value;
+
+  if(!nome) return;
+
+  itens.push({
+    nome: nome,
+    preco: 0,
+    marcado: false,
+    data: null,
+    categoria: categoria
+  });
+
+  document.getElementById("novoItem").value = "";
+
+  aplicarOrdenacao();
+  salvar();
+  render();
+}
+
+function buscarAtual(){
+  if(!nomeAtual || !tipoAtual) return;
+
+  if(tipoAtual === 'shopee'){
+    window.open(
+      "https://shopee.com.br/search?keyword=" + encodeURIComponent(nomeAtual),
+      '_blank'
+    );
+  } 
+  else if(tipoAtual === 'ml'){
+    window.open(
+      "https://lista.mercadolivre.com.br/" + encodeURIComponent(nomeAtual) + "_OrderId_PRICE_NoIndex_True",
+      '_blank'
+    );
+  }
+}
+
+// ================= RENDER =================
+
+function render(){
+  verificarExpiracao();
+
+  var lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  var filtrados = itens.slice();
+
+  // 🔍 Busca
+  if(buscaAtiva){
+    filtrados = filtrados.filter(item=>{
+      var termos = buscaNome.split(" ");
+
+        return termos.every(t =>
+          item.nome.toLowerCase().includes(t)
+        )
+        && item.preco >= buscaMin
+        && item.preco <= buscaMax;
+    });
+  }
+
+  // ✔ Marcados
+  if(filtro==='nao') filtrados = filtrados.filter(i=>!i.marcado);
+  if(filtro==='sim') filtrados = filtrados.filter(i=>i.marcado);
+
+  // 📦 Categoria (CORRIGIDO - FORA DO LOOP)
+  var filtroCat = document.getElementById("filtroCategoria").value;
+
+  if(filtroCat !== 'todas'){
+    filtrados = filtrados.filter(i => i.categoria === filtroCat);
+  }
+
+  // 🔁 Renderização
+  filtrados.forEach(item=>{
+    var index = itens.indexOf(item);
+
+    var div = document.createElement("div");
+    div.className="item";
+
+    var left = document.createElement("div");
+    left.className="item-left";
+    left.textContent = item.nome + " - R$" + (item.preco || 0);
+
+    var right = document.createElement("div");
+    right.className="item-right";
+
+    // Shopee
+    var btnShopee = document.createElement("button");
+    btnShopee.className="btn";
+    btnShopee.textContent="Shopee";
+    btnShopee.onclick = () => {
+      tipoAtual = 'shopee';
+      nomeAtual = item.nome; // 🔥 ESSENCIAL
+      abrirModal2(gerarShopee(item.nome), item.nome);
+    };
+    // ML
+    var btnML = document.createElement("button");
+    btnML.className="btn";
+    btnML.textContent="ML";
+    btnML.onclick = () => {
+      tipoAtual = 'ml';
+      nomeAtual = item.nome; // 🔥 ESSENCIAL
+      abrirModal(gerarML(item.nome), item.nome);
+    };
+
+    // Editar
+    var btnEditar = document.createElement("button");
+    btnEditar.className="btn";
+    btnEditar.textContent="Editar";
+    btnEditar.onclick=()=>{
+      abrirMenuEditar(index);
+    };
+
+    // Toggle
+    var toggle = document.createElement("div");
+    toggle.className="toggle" + (item.marcado ? " ativo" : "");
+
+    var dias = diasRestantes(item);
+
+    // 🔥 muda cor quando falta 1 dia
+    if(dias === 1){
+      toggle.style.background = "#ff9800"; // laranja
+    }
+
+    if(item.marcado && dias){
+      toggle.innerHTML = "<span class='dias'>" + dias + "</span>";
+    }
+
+    toggle.onclick = () => {
+      var item = itens[index];
+
+      // altera estado
+      item.marcado = !item.marcado;
+      item.data = item.marcado ? Date.now() : null;
+
+      salvar();
+
+      // 🔥 atualiza visual do botão
+      toggle.classList.toggle("ativo");
+
+      var dias = diasRestantes(item);
+
+      // cor laranja quando faltar 1 dia
+      if(dias === 1){
+        toggle.style.background = "#ff9800";
+      } else {
+        toggle.style.background = "";
+      }
+
+      // 🔥 atualiza número dentro do toggle
+      if(item.marcado && dias){
+        toggle.innerHTML = "<span class='dias'>" + dias + "</span>";
+      } else {
+        toggle.innerHTML = "";
+      }
+    };
+
+    right.appendChild(btnShopee);
+    right.appendChild(btnML);
+    right.appendChild(btnEditar);
+    right.appendChild(toggle);
+
+    div.appendChild(left);
+    div.appendChild(right);
+
+    lista.appendChild(div);
+  });
+}
+
+render();
+
+function exportarLista(){
+  if(itens.length === 0){
+    alert("Lista vazia");
+    return;
+  }
+
+  var conteudo = itens.map(function(i){
+    var status = i.marcado ? '[v]' : '[ ]';
+    var data = i.data || "";
+
+    return status + '|' + data + '|' + i.nome + '|' + (i.preco || 0);
+  }).join('\n');
+
+  var blob = new Blob([conteudo], {type:'text/plain;charset=utf-8;'});
+
+  var link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "lista.txt";
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+</body>
+</html>
