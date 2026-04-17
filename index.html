@@ -324,6 +324,35 @@ button[onclick*="fechar"]{
   background:#777 !important;
 }
 
+.badgeEnvio{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  font-weight:bold;
+  margin-top:4px;
+  background:#bdbdbd;
+  color:#fff;
+  flex:0 0 auto;
+}
+
+.badgeEnvio.ok{
+  background:#4caf50;
+}
+
+.badgeEnvio.zero{
+  background:#9e9e9e;
+}
+
+.item-left{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
 </style>
 </head>
 <body>
@@ -398,7 +427,8 @@ button[onclick*="fechar"]{
   <div class="modalContent">
     <h3>Definir Cupom ML</h3>
 
-    <input type="text" id="inputCupomML" placeholder="Digite o cupom">
+    <input type="text" id="inputCupomML" placeholder="Digite o cupom"
+    oninput="this.value = this.value.toUpperCase()">
 
     <div class="acoesModal">
       <button onclick="salvarCupomML()">Salvar</button>
@@ -527,6 +557,9 @@ var buscaMax = Infinity;
 
 var ordenacaoAtual = "preco";
 
+var TEMPO_MINIMO_ENVIO = 5000; // 5 segundos
+var timersConfirmacao = {};
+
 var cupomML = localStorage.getItem("cupomML") || "";
 var linkShopee = localStorage.getItem("linkShopee") || "";
 
@@ -638,11 +671,14 @@ function salvarNovoItem(){
   var categoria = detectarCategoria(nome);
 
   itens.push({
+    id: gerarIdItem(),
     nome: nome,
     preco: preco,
     marcado: false,
     data: null,
-    categoria: categoria
+    categoria: categoria,
+    envios: 0,
+    envioContado: false
   });
 
   // 🔥 limpa campos
@@ -736,44 +772,66 @@ function importarLista(){
       if(!linha) return;
 
       var partes = linha.split('|');
-      if(partes.length < 4) return;
 
-      var marcado = partes[0] === '[v]';
-      var data = parseInt(partes[1]) || null;
-      var nome = partes[2];
-
+      var marcado = false;
+      var data = null;
+      var envios = 0;
+      var envioContado = false;
+      var id = "";
+      var nome = "";
       var preco = 0;
-      if(partes[3]){
-        preco = normalizarPreco(partes[3]);
+
+      if(partes.length >= 7){
+        // novo formato: [v]|data|envios|contado|id|nome|preco
+        marcado = partes[0] === '[v]';
+        data = parseInt(partes[1]) || null;
+        envios = parseInt(partes[2]) || 0;
+        envioContado = partes[3] === '1';
+        id = partes[4] || "";
+        nome = partes[5];
+        preco = partes[6] ? normalizarPreco(partes[6]) : 0;
+      } else if(partes.length >= 4){
+        // formato antigo: [v]|data|nome|preco
+        marcado = partes[0] === '[v]';
+        data = parseInt(partes[1]) || null;
+        nome = partes[2];
+        preco = partes[3] ? normalizarPreco(partes[3]) : 0;
+      } else {
+        return;
       }
 
       var categoria = detectarCategoria(nome);
 
-      // 🔥 VERIFICA SE JÁ EXISTE
       var existente = itens.find(i => i.nome.toLowerCase() === nome.toLowerCase());
 
       if(existente){
-        // 🔥 ATUALIZA se necessário
-
-        // mantém o mais recente marcado
         if(marcado){
           existente.marcado = true;
           existente.data = data;
+          existente.envioContado = envioContado;
         }
 
-        // atualiza preço se tiver valor
         if(preco > 0){
           existente.preco = preco;
         }
 
+        if(envios > (existente.envios || 0)){
+          existente.envios = envios;
+        }
+
+        if(id && !existente.id){
+          existente.id = id;
+        }
       } else {
-        // 🔥 ADICIONA novo
         itens.push({
+          id: id || gerarIdItem(),
           nome: nome,
           preco: preco,
           marcado: marcado,
           data: data,
-          categoria: categoria
+          categoria: categoria,
+          envios: envios,
+          envioContado: envioContado
         });
       }
     });
@@ -781,6 +839,7 @@ function importarLista(){
     salvar();
     render();
     fecharMenuImportar();
+    restaurarEnviosPendentes();
   };
 
   reader.readAsText(file);
@@ -836,6 +895,109 @@ function toggleItem(index){
 
   salvar();
   
+}
+
+function gerarIdItem(){
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function limparTimerConfirmacao(id){
+  if(timersConfirmacao[id]){
+    clearTimeout(timersConfirmacao[id]);
+    delete timersConfirmacao[id];
+  }
+}
+
+function confirmarEnvioPorId(id){
+  var item = itens.find(i => i.id === id);
+  if(!item) return;
+
+  limparTimerConfirmacao(id);
+
+  if(item.marcado && !item.envioContado){
+    item.envios = (item.envios || 0) + 1;
+    item.envioContado = true;
+    salvar();
+    render();
+  }
+}
+
+function agendarConfirmacaoEnvio(item){
+  if(!item.id) item.id = gerarIdItem();
+
+  limparTimerConfirmacao(item.id);
+
+  var faltam = TEMPO_MINIMO_ENVIO - (Date.now() - (item.data || Date.now()));
+
+  if(faltam <= 0){
+    confirmarEnvioPorId(item.id);
+    return;
+  }
+
+  timersConfirmacao[item.id] = setTimeout(function(){
+    confirmarEnvioPorId(item.id);
+  }, faltam);
+}
+
+function restaurarEnviosPendentes(){
+  var alterou = false;
+
+  itens.forEach(function(item){
+    if(!item.id){
+      item.id = gerarIdItem();
+      alterou = true;
+    }
+
+    if(typeof item.envios !== "number"){
+      item.envios = 0;
+      alterou = true;
+    }
+
+    if(typeof item.envioContado !== "boolean"){
+      item.envioContado = false;
+      alterou = true;
+    }
+
+    if(item.marcado && item.data && !item.envioContado){
+      var faltam = TEMPO_MINIMO_ENVIO - (Date.now() - item.data);
+
+      limparTimerConfirmacao(item.id);
+
+      if(faltam <= 0){
+        item.envios += 1;
+        item.envioContado = true;
+        alterou = true;
+      } else {
+        timersConfirmacao[item.id] = setTimeout(function(){
+          confirmarEnvioPorId(item.id);
+        }, faltam);
+      }
+    }
+  });
+
+  if(alterou) salvar();
+}
+
+function toggleItem(index){
+  var item = itens[index];
+  if(!item) return;
+
+  if(!item.id) item.id = gerarIdItem();
+
+  if(item.marcado){
+    item.marcado = false;
+    item.data = null;
+    item.envioContado = false;
+    limparTimerConfirmacao(item.id);
+  } else {
+    item.marcado = true;
+    item.data = Date.now();
+    item.envioContado = false;
+    agendarConfirmacaoEnvio(item);
+  }
+
+  salvar();
+  render();
 }
 
 // ================= UTIL =================
@@ -912,11 +1074,11 @@ function abrirModalExcluir(){
 function gerarShopee(nome){
 return `🔥 ${nome}
 
-❌ De R$ 
-✅ Por R$ Pix!
+❌ De R$
+✅ Por R$ no Pix!
 (apenas R$ cada unidade)
 
-🛒 Primeiro adicione o produto no carrinho:
+🛒 Primeiro adicione o produto no carrinho: 
 
 👉🏻 Depois ative seu desconto resgatando o cupom de R$ OFF aqui: ${linkShopee || "https://s.shopee.com.br/7VByMsPiww"}
 
@@ -1110,6 +1272,7 @@ function buscarAtual(){
 
 function render(){
   verificarExpiracao();
+  restaurarEnviosPendentes();
 
   var lista = document.getElementById("lista");
   lista.innerHTML = "";
@@ -1148,8 +1311,18 @@ function render(){
     div.className="item";
 
     var left = document.createElement("div");
-    left.className="item-left";
-    left.textContent = item.nome + " - R$" + (item.preco || 0);
+    left.className = "item-left";
+
+    var nomeEl = document.createElement("div");
+    nomeEl.textContent = item.nome + " - R$" + (item.preco || 0);
+
+    var badge = document.createElement("span");
+    badge.className = "badgeEnvio " + ((item.envios || 0) > 0 ? "ok" : "zero");
+    badge.textContent = item.envios || 0;
+    badge.title = (item.envios || 0) > 0 ? (item.envios + " envios confirmados") : "Nunca enviado";
+
+    left.appendChild(nomeEl);
+    left.appendChild(badge);
 
     var right = document.createElement("div");
     right.className="item-right";
@@ -1197,32 +1370,7 @@ function render(){
     }
 
     toggle.onclick = () => {
-      var item = itens[index];
-
-      // altera estado
-      item.marcado = !item.marcado;
-      item.data = item.marcado ? Date.now() : null;
-
-      salvar();
-
-      // 🔥 atualiza visual do botão
-      toggle.classList.toggle("ativo");
-
-      var dias = diasRestantes(item);
-
-      // cor laranja quando faltar 1 dia
-      if(dias === 1){
-        toggle.style.background = "#ff9800";
-      } else {
-        toggle.style.background = "";
-      }
-
-      // 🔥 atualiza número dentro do toggle
-      if(item.marcado && dias){
-        toggle.innerHTML = "<span class='dias'>" + dias + "</span>";
-      } else {
-        toggle.innerHTML = "";
-      }
+      toggleItem(index);
     };
 
     right.appendChild(btnShopee);
@@ -1242,7 +1390,13 @@ render();
 function exportarLista(){
   if(itens.length === 0){
     alert("Lista vazia");
-    return;
+    var status = i.marcado ? '[v]' : '[ ]';
+    var data = i.data || "";
+    var envios = i.envios || 0;
+    var contado = i.envioContado ? "1" : "0";
+    var id = i.id || "";
+
+    return status + '|' + data + '|' + envios + '|' + contado + '|' + id + '|' + i.nome + '|' + (i.preco || 0);
   }
 
   var conteudo = itens.map(function(i){
